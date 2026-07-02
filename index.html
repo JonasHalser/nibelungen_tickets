@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ticket Dashboard - Das Lied von Liebe und Tod</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <style>
+    :root {
+      --bg: #140d0b;
+      --bg-soft: #1c1310;
+      --panel: #201613;
+      --panel-2: #2a1d19;
+      --text: #fff5ee;
+      --muted: #d8b8a4;
+
+      --accent: #bc4117;
+      --accent-2: #09819c;
+      --accent-3: #ebba82;
+
+      --border: rgba(235, 186, 130, 0.14);
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.38);
+      --radius: 22px;
+
+      --chart-1: #bc4117;
+      --chart-2: #09819c;
+      --chart-3: #ebba82;
+      --chart-4: #d96a3b;
+      --chart-5: #4fb3c8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(188, 65, 23, 0.20), transparent 28%),
+        radial-gradient(circle at top right, rgba(9, 129, 156, 0.18), transparent 24%),
+        radial-gradient(circle at bottom center, rgba(235, 186, 130, 0.10), transparent 30%),
+        linear-gradient(180deg, #120b09 0%, #18100d 100%);
+      color: var(--text);
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .title {
+      font-size: 2rem;
+      font-weight: 800;
+      margin: 0;
+      letter-spacing: -0.03em;
+      color: var(--text);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-top: 6px;
+      font-size: 0.98rem;
+    }
+
+    .status {
+      background: rgba(235, 186, 130, 0.08);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 999px;
+      color: var(--accent-3);
+      font-size: 0.92rem;
+      backdrop-filter: blur(8px);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .trigger-btn {
+      appearance: none;
+      border: 1px solid rgba(235, 186, 130, 0.18);
+      background: linear-gradient(135deg, rgba(188, 65, 23, 0.95), rgba(9, 129, 156, 0.9));
+      color: var(--text);
+      padding: 12px 18px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform 0.18s ease, opacity 0.18s ease, filter 0.18s ease;
+    }
+
+    .trigger-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+
+    .trigger-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+      transform: none;
+      filter: none;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      margin-bottom: 24px;
+    }
+
+    .summary-card {
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015)),
+        linear-gradient(180deg, rgba(188, 65, 23, 0.08), rgba(9, 129, 156, 0.05));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+      backdrop-filter: blur(10px);
+    }
+
+    .summary-title {
+      color: var(--accent-3);
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .summary-value {
+      font-size: 2.2rem;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .summary-meta {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    .summary-card-layout {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .summary-left {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      flex: 1 1 520px;
+    }
+
+    .summary-top-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 18px;
+    }
+
+    .mini-summary {
+      padding: 18px;
+      border-radius: 18px;
+      border: 1px solid rgba(235, 186, 130, 0.12);
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .summary-ring-panel {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-left: auto;
+    }
+
+    .summary-ring-wrap {
+      width: 140px;
+      height: 140px;
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .summary-ring-svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .summary-ring-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .summary-ring-percent {
+      font-size: 1.6rem;
+      font-weight: 900;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .summary-ring-caption {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .summary-ring-meta {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.6;
+      min-width: 140px;
+    }
+
+    .summary-ring-meta strong {
+      color: var(--text);
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015)),
+        linear-gradient(180deg, rgba(188, 65, 23, 0.06), rgba(9, 129, 156, 0.04));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 1.05rem;
+      color: var(--accent-3);
+      font-weight: 700;
+    }
+
+    .value {
+      font-size: 3rem;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.05em;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .progress-head {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .progress {
+      width: 100%;
+      height: 16px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(235, 186, 130, 0.10);
+      box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      transition: width 0.5s ease;
+      box-shadow: 0 0 18px rgba(188, 65, 23, 0.24);
+    }
+
+    .chart-card {
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015)),
+        linear-gradient(180deg, rgba(9, 129, 156, 0.05), rgba(188, 65, 23, 0.04));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .chart-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: var(--accent-3);
+    }
+
+    .chart-header h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 440px;
+    }
+
+    .footer-note {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .error {
+      color: #ffb4a3;
+      margin-top: 10px;
+      font-size: 0.95rem;
+      white-space: pre-wrap;
+    }
+
+    @media (max-width: 900px) {
+      .chart-container {
+        height: 340px;
+      }
+
+      .summary-card-layout {
+        align-items: flex-start;
+      }
+
+      .summary-ring-panel {
+        margin-left: 0;
+      }
+    }
+
+    .card-top {
+      flex: 1;
+    }
+
+    .card-bottom {
+      margin-top: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+
+    thead tr {
+      background: rgba(255,255,255,0.04);
+    }
+
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid rgba(235, 186, 130, 0.10);
+    }
+
+    th {
+      color: var(--accent-3);
+      font-weight: 700;
+      position: sticky;
+      top: 0;
+      background: rgba(32, 22, 19, 0.95);
+      backdrop-filter: blur(6px);
+    }
+
+    td {
+      color: var(--muted);
+    }
+
+    tbody tr:hover {
+      background: rgba(255,255,255,0.03);
+    }
+
+    .table-number {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .table-timestamp {
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    #tableWrapper {
+      overflow: hidden;
+      transition: max-height 0.4s ease;
+    }
+
+    .table-collapsed {
+      max-height: 0;
+    }
+
+    .table-open {
+      max-height: 600px;
+    }
+
+    #tableToggleIcon {
+      color: var(--accent-3);
+      font-size: 1.2rem;
+      margin-left: auto;
+    }
+
+    .delete-btn {
+      appearance: none;
+      border: 1px solid rgba(255, 180, 163, 0.25);
+      background: rgba(188, 65, 23, 0.18);
+      color: #ffd8cc;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
+    }
+
+    .delete-btn:hover {
+      background: rgba(188, 65, 23, 0.32);
+      transform: translateY(-1px);
+    }
+
+    .delete-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1 class="title">Ticket Dashboard</h1>
+        <div class="subtitle">Datenauswertung der Ticketverkäufe mit aktuellem Stand und Verlauf</div>
+      </div>
+
+      <div class="header-actions">
+        <div class="status" id="lastUpdated">Lade Daten ...</div>
+      </div>
+    </div>
+
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-card-layout">
+          <div class="summary-left">
+            <div class="summary-top-grid">
+              <div class="mini-summary">
+                <div class="summary-title">Ø Ticketverkäufe pro Tag (letzte 7 Tage)</div>
+                <div class="summary-value" id="avg7dValue">--</div>
+                <div class="summary-meta" id="avg7dMeta">Warte auf Daten ...</div>
+              </div>
+
+              <div class="mini-summary">
+                <div class="summary-title">Verkauft seit letztem Stand des Vortags</div>
+                <div class="summary-value" id="deltaTotal">--</div>
+                <div class="summary-meta" id="deltaMeta">Warte auf Daten ...</div>
+              </div>
+
+              <div class="mini-summary">
+                <div class="summary-title">Verkaufspeak</div>
+                <div class="summary-value" id="peakValue" style="font-size:1.8rem;">--</div>
+                <div class="summary-meta" id="peakMeta">Warte auf Daten ...</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="summary-ring-panel">
+            <div class="summary-ring-wrap">
+              <svg viewBox="0 0 140 140" class="summary-ring-svg">
+                <circle
+                  cx="70"
+                  cy="70"
+                  r="54"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.08)"
+                  stroke-width="12"
+                ></circle>
+
+                <circle id="totalRing1" cx="70" cy="70" r="54" fill="none" stroke="var(--chart-1)" stroke-width="12" stroke-linecap="butt" stroke-dasharray="0 339.292" stroke-dashoffset="0"></circle>
+                <circle id="totalRing2" cx="70" cy="70" r="54" fill="none" stroke="var(--chart-2)" stroke-width="12" stroke-linecap="butt" stroke-dasharray="0 339.292" stroke-dashoffset="0"></circle>
+                <circle id="totalRing3" cx="70" cy="70" r="54" fill="none" stroke="var(--chart-3)" stroke-width="12" stroke-linecap="butt" stroke-dasharray="0 339.292" stroke-dashoffset="0"></circle>
+                <circle id="totalRing4" cx="70" cy="70" r="54" fill="none" stroke="var(--chart-4)" stroke-width="12" stroke-linecap="butt" stroke-dasharray="0 339.292" stroke-dashoffset="0"></circle>
+                <circle id="totalRing5" cx="70" cy="70" r="54" fill="none" stroke="var(--chart-5)" stroke-width="12" stroke-linecap="butt" stroke-dasharray="0 339.292" stroke-dashoffset="0"></circle>
+              </svg>
+
+              <div class="summary-ring-label">
+                <div class="summary-ring-percent" id="totalRingPercent">--%</div>
+                <div class="summary-ring-caption">gesamt belegt</div>
+              </div>
+            </div>
+
+            <div class="summary-ring-meta">
+              <div><strong id="ringValue1">--</strong> 17.07</div>
+              <div><strong id="ringValue2">--</strong> 18.07</div>
+              <div><strong id="ringValue3">--</strong> 23.07</div>
+              <div><strong id="ringValue4">--</strong> 24.07</div>
+              <div><strong id="ringValue5">--</strong> 25.07</div>
+              <div style="margin-top:8px;"><span id="totalCapacityValue">--</span> gesamt</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cards" id="cardsContainer"></div>
+
+    <div class="chart-card">
+  <div class="chart-header">
+    <h2>Zeitlicher Verlauf aller 5 Termine</h2>
+    <h3>Ohne Ehrengäste</h3>
+    <div class="status">Auto-Refresh jede Stunde</div>
+  </div>
+
+  <div class="chart-container">
+    <canvas id="historyChart"></canvas>
+  </div>
+
+  <div class="footer-note" id="latestTimestamp">Letzter Datensatz: --</div>
+  <div class="error" id="errorBox"></div>
+</div>
+
+<div class="chart-card" style="margin-top:24px;">
+  <div class="chart-header">
+    <h2>Wochenverkaufszahlen nach Kalenderwoche</h2>
+    <h3>Basis: letzter Stand je Kalendertag, summiert pro KW</h3>
+    <div class="status">Automatisch aus Tagesdifferenzen berechnet</div>
+  </div>
+
+  <div class="chart-container" style="height:320px;">
+    <canvas id="weeklySalesChart"></canvas>
+  </div>
+
+  <div class="footer-note" id="weeklySalesNote">KW-Auswertung: --</div>
+</div>
+    <div class="chart-card" style="margin-top:24px;">
+      <div class="chart-header" style="cursor:pointer;" onclick="toggleTable()">
+        <h2>Alle CSV-Daten</h2>
+        <div class="status" id="tableRowCount">0 Einträge</div>
+        <div id="tableToggleIcon">▼</div>
+      </div>
+
+      <div id="tableWrapper" class="table-collapsed">
+        <div style="overflow-x:auto;">
+          <table id="dataTable">
+            <thead>
+              <tr id="dataTableHead"></tr>
+            </thead>
+            <tbody id="dataTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CSV_URL = "data/ticket_history.csv";
+
+    const MAX_TICKETS = 570;
+    const REFRESH_MS = 3600000;
+    const PEAK_THRESHOLD = 10;
+
+    const SERIES_NAMES = [
+      "17.07",
+      "18.07",
+      "23.07",
+      "24.07",
+      "25.07"
+    ];
+
+    const RESERVED_OFFSETS = [150, 0, 0, 0, 0];
+
+    let chart = null;
+    let weeklyChart = null;
+    let tableOpen = false;
+
+    function detectDelimiter(line) {
+      const commaCount = (line.match(/,/g) || []).length;
+      const semicolonCount = (line.match(/;/g) || []).length;
+      return semicolonCount > commaCount ? ";" : ",";
+    }
+
+    function parseDateTime(timestamp) {
+      const trimmed = String(timestamp).trim();
+      const normalized = trimmed.includes("T") ? trimmed : trimmed.replace(" ", "T");
+      const date = new Date(normalized);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function formatDateTime(timestamp) {
+      const date = parseDateTime(timestamp);
+      if (!date) return timestamp;
+
+      return date.toLocaleString("de-DE", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function formatDayKeyLocal(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function getPreviousDayKey(dayKey) {
+      const [year, month, day] = dayKey.split("-").map(Number);
+      const d = new Date(year, month - 1, day);
+      d.setDate(d.getDate() - 1);
+      return formatDayKeyLocal(d);
+    }
+
+    function parseCSV(text) {
+      const lines = text.trim().split(/\r?\n/).filter(Boolean);
+      if (lines.length < 2) return [];
+
+      const delimiter = detectDelimiter(lines[0]);
+      const rows = lines.map(line => line.split(delimiter).map(v => v.trim()));
+      const dataRows = rows.slice(1);
+
+      return dataRows
+        .map(row => {
+          const timestamp = row[0].trim();
+          const parsedDate = parseDateTime(timestamp);
+
+          const values = row.slice(1, 6).map(v => {
+            const cleaned = v.replace(",", ".").replace(/[^0-9.-]/g, "");
+            const num = Number(cleaned);
+            return Number.isNaN(num) ? null : num;
+          });
+
+          return { timestamp, parsedDate, values };
+        })
+        .filter(r => r.parsedDate && r.values.length === 5)
+        .sort((a, b) => a.parsedDate - b.parsedDate);
+    }
+
+    function getProgressGradient(percent) {
+      if (percent >= 90) {
+        return "linear-gradient(90deg, #ebba82, #bc4117)";
+      }
+      if (percent >= 60) {
+        return "linear-gradient(90deg, #09819c, #ebba82)";
+      }
+      return "linear-gradient(90deg, #09819c, #bc4117)";
+    }
+
+    function getDisplayValue(value, index) {
+      const safeValue = value ?? 0;
+      return safeValue + (RESERVED_OFFSETS[index] || 0);
+    }
+
+    function getRowDayKey(row) {
+      return formatDayKeyLocal(row.parsedDate);
+    }
+
+    function getRawTotal(row) {
+      return row.values.reduce((sum, value) => sum + (value ?? 0), 0);
+    }
+
+    function getPreviousDayLatestRow(rows) {
+      if (!rows.length) return null;
+
+      const latestRow = rows[rows.length - 1];
+      const latestDayKey = getRowDayKey(latestRow);
+      const previousDayKey = getPreviousDayKey(latestDayKey);
+
+      const previousDayRows = rows.filter(row => getRowDayKey(row) === previousDayKey);
+      if (!previousDayRows.length) return null;
+
+      return previousDayRows[previousDayRows.length - 1];
+    }
+
+    function getLatestRowPerDay(rows) {
+      const map = new Map();
+
+      rows.forEach(row => {
+        map.set(getRowDayKey(row), row);
+      });
+
+      return Array.from(map.values()).sort((a, b) => a.parsedDate - b.parsedDate);
+    }
+
+    function getISOWeekInfo(date) {
+      const tempDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const dayNum = tempDate.getUTCDay() || 7;
+      tempDate.setUTCDate(tempDate.getUTCDate() + 4 - dayNum);
+
+      const yearStart = new Date(Date.UTC(tempDate.getUTCFullYear(), 0, 1));
+      const weekNo = Math.ceil((((tempDate - yearStart) / 86400000) + 1) / 7);
+
+      return {
+        year: tempDate.getUTCFullYear(),
+        week: weekNo
+      };
+    }
+
+    function getCalendarWeekLabel(date) {
+      const { year, week } = getISOWeekInfo(date);
+      return `KW ${String(week).padStart(2, "0")} / ${year}`;
+    }
+
+    function getWeeklySalesData(rows) {
+      const dailyLatestRows = getLatestRowPerDay(rows);
+
+      if (dailyLatestRows.length < 2) {
+        return [];
+      }
+
+      const weeklyMap = new Map();
+
+      for (let i = 1; i < dailyLatestRows.length; i++) {
+        const prev = dailyLatestRows[i - 1];
+        const curr = dailyLatestRows[i];
+
+        const delta = getRawTotal(curr) - getRawTotal(prev);
+        const { year, week } = getISOWeekInfo(curr.parsedDate);
+        const key = `${year}-KW${String(week).padStart(2, "0")}`;
+
+        if (!weeklyMap.has(key)) {
+          weeklyMap.set(key, {
+            key,
+            label: `KW ${String(week).padStart(2, "0")} / ${year}`,
+            year,
+            week,
+            totalSales: 0,
+            dayCount: 0
+          });
+        }
+
+        const entry = weeklyMap.get(key);
+        entry.totalSales += delta;
+        entry.dayCount += 1;
+      }
+
+      return Array.from(weeklyMap.values())
+        .sort((a, b) => {
+          if (a.year !== b.year) return a.year - b.year;
+          return a.week - b.week;
+        })
+        .map(entry => ({
+          ...entry,
+          averagePerDay: entry.dayCount ? entry.totalSales / entry.dayCount : 0
+        }));
+    }
+
+    function update7DayAverageSummary(rows) {
+      const avgValueEl = document.getElementById("avg7dValue");
+      const avgMetaEl = document.getElementById("avg7dMeta");
+
+      if (!rows.length) {
+        avgValueEl.textContent = "--";
+        avgMetaEl.textContent = "Keine Daten verfügbar.";
+        return;
+      }
+
+      const dailyLatestRows = getLatestRowPerDay(rows);
+
+      if (dailyLatestRows.length < 2) {
+        avgValueEl.textContent = "--";
+        avgMetaEl.textContent = "Mindestens Daten aus zwei Tagen nötig.";
+        return;
+      }
+
+      const deltas = [];
+      for (let i = 1; i < dailyLatestRows.length; i++) {
+        const prev = dailyLatestRows[i - 1];
+        const curr = dailyLatestRows[i];
+        deltas.push({
+          from: prev,
+          to: curr,
+          delta: getRawTotal(curr) - getRawTotal(prev)
+        });
+      }
+
+      const last7Deltas = deltas.slice(-7);
+
+      if (!last7Deltas.length) {
+        avgValueEl.textContent = "--";
+        avgMetaEl.textContent = "Keine Tagesveränderungen berechenbar.";
+        return;
+      }
+
+      const sum = last7Deltas.reduce((acc, item) => acc + item.delta, 0);
+      const avg = sum / last7Deltas.length;
+
+      avgValueEl.textContent = avg.toLocaleString("de-DE", {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1
+      });
+
+      const firstRangeDay = getRowDayKey(last7Deltas[0].to);
+      const lastRangeDay = getRowDayKey(last7Deltas[last7Deltas.length - 1].to);
+
+      avgMetaEl.innerHTML = `
+        Berechnet aus <strong>${last7Deltas.length}</strong> Tagesdifferenzen<br>
+        Zeitraum: <strong>${firstRangeDay}</strong> bis <strong>${lastRangeDay}</strong><br>
+        Basis: letzter Stand je Kalendertag
+      `;
+    }
+
+    function updateDeltaSummary(rows) {
+      const deltaTotalEl = document.getElementById("deltaTotal");
+      const deltaMetaEl = document.getElementById("deltaMeta");
+
+      if (!rows.length) {
+        deltaTotalEl.textContent = "--";
+        deltaMetaEl.textContent = "Keine Daten verfügbar.";
+        return;
+      }
+
+      const latestRow = rows[rows.length - 1];
+      const latestDayKey = getRowDayKey(latestRow);
+      const previousDayKey = getPreviousDayKey(latestDayKey);
+      const previousRow = getPreviousDayLatestRow(rows);
+
+      if (!previousRow) {
+        deltaTotalEl.textContent = "--";
+        deltaMetaEl.innerHTML = `
+          Kein Vergleichswert für den Vortag gefunden.<br>
+          Gesucht wurde: <strong>${previousDayKey}</strong><br>
+          Aktueller Stand: <strong>${formatDateTime(latestRow.timestamp)}</strong>
+        `;
+        return;
+      }
+
+      const previousSum = getRawTotal(previousRow);
+      const latestSum = getRawTotal(latestRow);
+      const delta = latestSum - previousSum;
+
+      const sign = delta > 0 ? "+" : "";
+      deltaTotalEl.textContent = `${sign}${delta.toLocaleString("de-DE")}`;
+
+      deltaMetaEl.innerHTML = `
+        Letzter Stand Vortag: <strong>${formatDateTime(previousRow.timestamp)}</strong><br>
+        Aktueller Stand: <strong>${formatDateTime(latestRow.timestamp)}</strong><br>
+        Gesamt verkauft: ${previousSum.toLocaleString("de-DE")} → ${latestSum.toLocaleString("de-DE")}
+      `;
+    }
+
+    function updatePeakSummary(rows) {
+      const peakValueEl = document.getElementById("peakValue");
+      const peakMetaEl = document.getElementById("peakMeta");
+
+      if (rows.length < 2) {
+        peakValueEl.textContent = "--";
+        peakMetaEl.textContent = "Mindestens zwei Datensätze nötig.";
+        return;
+      }
+
+      const previousRow = rows[rows.length - 2];
+      const latestRow = rows[rows.length - 1];
+
+      const previousSum = getRawTotal(previousRow);
+      const latestSum = getRawTotal(latestRow);
+      const delta = latestSum - previousSum;
+
+      if (delta >= PEAK_THRESHOLD) {
+        peakValueEl.textContent = `🚀 +${delta.toLocaleString("de-DE")}`;
+        peakMetaEl.innerHTML = `
+          Verkaufspeak erkannt<br>
+          ${formatDateTime(previousRow.timestamp)} → ${formatDateTime(latestRow.timestamp)}
+        `;
+      } else if (delta > 0) {
+        peakValueEl.textContent = `+${delta.toLocaleString("de-DE")}`;
+        peakMetaEl.innerHTML = `
+          Kein Peak, aber Anstieg erkannt<br>
+          ${formatDateTime(previousRow.timestamp)} → ${formatDateTime(latestRow.timestamp)}
+        `;
+      } else if (delta === 0) {
+        peakValueEl.textContent = `0`;
+        peakMetaEl.innerHTML = `
+          Keine Veränderung<br>
+          ${formatDateTime(previousRow.timestamp)} → ${formatDateTime(latestRow.timestamp)}
+        `;
+      } else {
+        peakValueEl.textContent = `${delta.toLocaleString("de-DE")}`;
+        peakMetaEl.innerHTML = `
+          Rückgang erfasst<br>
+          ${formatDateTime(previousRow.timestamp)} → ${formatDateTime(latestRow.timestamp)}
+        `;
+      }
+    }
+
+    function updateTotalSummaryRing(latestRow) {
+      const values = latestRow.values.map((value, index) => getDisplayValue(value, index));
+      const totalCapacity = MAX_TICKETS * latestRow.values.length;
+      const occupied = values.reduce((sum, value) => sum + value, 0);
+      const occupiedPercent = Math.max(0, Math.min(100, (occupied / totalCapacity) * 100));
+
+      const radius = 54;
+      const circumference = 2 * Math.PI * radius;
+      let accumulatedLength = 0;
+
+      values.forEach((value, index) => {
+        const segmentLength = circumference * (value / totalCapacity);
+        const circle = document.getElementById(`totalRing${index + 1}`);
+
+        circle.style.strokeDasharray = `${segmentLength} ${circumference - segmentLength}`;
+        circle.style.strokeDashoffset = `${-accumulatedLength}`;
+
+        accumulatedLength += segmentLength;
+
+        const valueLabel = document.getElementById(`ringValue${index + 1}`);
+        if (valueLabel) {
+          valueLabel.textContent = value.toLocaleString("de-DE");
+        }
+      });
+
+      document.getElementById("totalRingPercent").textContent = `${occupiedPercent.toFixed(0)}%`;
+      document.getElementById("totalCapacityValue").textContent = totalCapacity.toLocaleString("de-DE");
+    }
+
+    function renderCards(latestRow, previousDayRow) {
+      const container = document.getElementById("cardsContainer");
+      container.innerHTML = "";
+
+      latestRow.values.forEach((value, i) => {
+        const csvValue = value ?? 0;
+        const displayValue = getDisplayValue(value, i);
+        const percent = Math.max(0, Math.min(100, (displayValue / MAX_TICKETS) * 100));
+        const remaining = Math.max(0, MAX_TICKETS - displayValue);
+
+        let deltaText = "--";
+        if (previousDayRow && previousDayRow.values[i] != null) {
+          const delta = csvValue - (previousDayRow.values[i] ?? 0);
+          const sign = delta > 0 ? "+" : "";
+          deltaText = `${sign}${delta.toLocaleString("de-DE")}`;
+        }
+
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const radius = 42;
+        const circumference = 2 * Math.PI * radius;
+        const dashOffset = circumference * (1 - percent / 100);
+
+        card.innerHTML = `
+          <div class="card-top">
+            <h2>Termin ${SERIES_NAMES[i]}</h2>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:14px;">
+              <div>
+                <div class="value">${displayValue.toLocaleString("de-DE")}</div>
+
+                <div style="color:var(--muted); font-size:0.9rem;">
+                  Verkauft: ${csvValue.toLocaleString("de-DE")}
+                  ${RESERVED_OFFSETS[i] ? ` + ${RESERVED_OFFSETS[i]} reserviert` : ""}
+                </div>
+              </div>
+
+              <div style="width:110px; height:110px; position:relative; flex:0 0 auto;">
+                <svg viewBox="0 0 110 110" style="width:100%; height:100%; transform:rotate(-90deg);">
+                  <circle cx="55" cy="55" r="${radius}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10"></circle>
+                  <circle
+                    cx="55"
+                    cy="55"
+                    r="${radius}"
+                    fill="none"
+                    stroke="url(#ringGradient${i})"
+                    stroke-width="10"
+                    stroke-linecap="round"
+                    stroke-dasharray="${circumference}"
+                    stroke-dashoffset="${dashOffset}"
+                  ></circle>
+                  <defs>
+                    <linearGradient id="ringGradient${i}" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stop-color="#09819c"></stop>
+                      <stop offset="55%" stop-color="#ebba82"></stop>
+                      <stop offset="100%" stop-color="#bc4117"></stop>
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column;">
+                  <div style="font-weight:800; font-size:1.15rem; color:var(--text);">${percent.toFixed(0)}%</div>
+                  <div style="font-size:0.72rem; color:var(--muted);">belegt</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-bottom">
+            <div style="color:var(--accent-3); font-size:0.9rem; margin-top:6px; font-weight:600;">
+              Seit Vortag: ${deltaText}
+            </div>
+
+            <div class="meta">
+              <span>${remaining.toLocaleString("de-DE")} frei</span>
+              <span>max. ${MAX_TICKETS.toLocaleString("de-DE")}</span>
+            </div>
+
+            <div class="progress-head">
+              <span>Auslastung</span>
+              <span>${percent.toFixed(1)}%</span>
+            </div>
+
+            <div class="progress">
+              <div class="progress-bar" style="width:${percent}%; background:${getProgressGradient(percent)}"></div>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function renderDataTable(rows) {
+      const head = document.getElementById("dataTableHead");
+      const body = document.getElementById("dataTableBody");
+      const rowCount = document.getElementById("tableRowCount");
+
+      head.innerHTML = `
+        <th>Zeitpunkt</th>
+        <th>${SERIES_NAMES[0]}</th>
+        <th>${SERIES_NAMES[1]}</th>
+        <th>${SERIES_NAMES[2]}</th>
+        <th>${SERIES_NAMES[3]}</th>
+        <th>${SERIES_NAMES[4]}</th>
+      `;
+
+      body.innerHTML = [...rows].reverse().map(row => `
+        <tr>
+          <td class="table-timestamp">${formatDateTime(row.timestamp)}</td>
+          <td class="table-number">${row.values[0] != null ? row.values[0].toLocaleString("de-DE") : "--"}</td>
+          <td class="table-number">${row.values[1] != null ? row.values[1].toLocaleString("de-DE") : "--"}</td>
+          <td class="table-number">${row.values[2] != null ? row.values[2].toLocaleString("de-DE") : "--"}</td>
+          <td class="table-number">${row.values[3] != null ? row.values[3].toLocaleString("de-DE") : "--"}</td>
+          <td class="table-number">${row.values[4] != null ? row.values[4].toLocaleString("de-DE") : "--"}</td>
+        </tr>
+      `).join("");
+
+      rowCount.textContent = `${rows.length.toLocaleString("de-DE")} Einträge`;
+    }
+
+    function createOrUpdateChart(rows) {
+  const chartColors = [
+    getComputedStyle(document.documentElement).getPropertyValue("--chart-1").trim(),
+    getComputedStyle(document.documentElement).getPropertyValue("--chart-2").trim(),
+    getComputedStyle(document.documentElement).getPropertyValue("--chart-3").trim(),
+    getComputedStyle(document.documentElement).getPropertyValue("--chart-4").trim(),
+    getComputedStyle(document.documentElement).getPropertyValue("--chart-5").trim()
+  ];
+
+  const firstDate = rows[0]?.parsedDate;
+  const lastDate = rows[rows.length - 1]?.parsedDate;
+
+  const datasets = Array.from({ length: 5 }, (_, i) => ({
+    label: `Termin ${SERIES_NAMES[i]}`,
+    data: rows
+      .map(r => {
+        const raw = r.values[i];
+        if (raw == null) return null;
+
+        return {
+          x: r.parsedDate,
+          y: raw
+        };
+      })
+      .filter(Boolean),
+    tension: 0.25,
+    borderWidth: 3,
+    borderColor: chartColors[i],
+    backgroundColor: chartColors[i],
+    pointRadius: 0,
+    pointHoverRadius: 6,
+    pointBackgroundColor: chartColors[i],
+    pointBorderColor: chartColors[i],
+    fill: false,
+    yAxisID: "y"
+  }));
+
+  const totalDataset = {
+    label: "Gesamt kumuliert",
+    data: rows.map(r => ({
+      x: r.parsedDate,
+      y: getRawTotal(r)
+    })),
+    tension: 0.25,
+    borderWidth: 4,
+    borderColor: "#ffffff",
+    backgroundColor: "#ffffff",
+    pointRadius: 0,
+    pointHoverRadius: 6,
+    pointBackgroundColor: "#ffffff",
+    pointBorderColor: "#ffffff",
+    borderDash: [8, 6],
+    fill: false,
+    yAxisID: "y1"
+  };
+
+  const allDatasets = [...datasets, totalDataset];
+
+  const ctx = document.getElementById("historyChart").getContext("2d");
+
+  if (chart) {
+    chart.data.datasets = allDatasets;
+    chart.options.scales.x.min = firstDate;
+    chart.options.scales.x.max = lastDate;
+    chart.update();
+    return;
+  }
+
+  chart = new Chart(ctx, {
+    type: "line",
+    data: {
+      datasets: allDatasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: "nearest",
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          labels: {
+            color: "#fff5ee",
+            usePointStyle: true,
+            pointStyle: "circle"
+          }
+        },
+        tooltip: {
+          backgroundColor: "rgba(22,14,11,0.94)",
+          titleColor: "#fff5ee",
+          bodyColor: "#f3d8c7",
+          borderColor: "rgba(235,186,130,0.18)",
+          borderWidth: 1,
+          callbacks: {
+            title(items) {
+              if (!items.length) return "";
+              const date = items[0].parsed.x;
+              return new Date(date).toLocaleString("de-DE", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit"
+              });
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: "time",
+          min: firstDate,
+          max: lastDate,
+          bounds: "data",
+          offset: false,
+          time: {
+            unit: "day",
+            tooltipFormat: "dd.MM.yyyy HH:mm",
+            displayFormats: {
+              day: "dd.MM."
+            }
+          },
+          ticks: {
+            color: "#d8b8a4"
+          },
+          grid: {
+            color: "rgba(235,186,130,0.08)"
+          }
+        },
+        y: {
+          type: "linear",
+          position: "left",
+          beginAtZero: true,
+          suggestedMax: MAX_TICKETS,
+          ticks: {
+            color: "#d8b8a4"
+          },
+          grid: {
+            color: "rgba(235,186,130,0.10)"
+          },
+          title: {
+            display: true,
+            text: "Tickets je Termin",
+            color: "#d8b8a4"
+          }
+        },
+        y1: {
+          type: "linear",
+          position: "right",
+          beginAtZero: true,
+          suggestedMax: MAX_TICKETS * 5,
+          ticks: {
+            color: "#ffffff"
+          },
+          grid: {
+            drawOnChartArea: false
+          },
+          title: {
+            display: true,
+            text: "Gesamt kumuliert",
+            color: "#ffffff"
+          }
+        }
+      }
+    }
+  });
+}
+
+    function createOrUpdateWeeklySalesChart(rows) {
+      const weeklyData = getWeeklySalesData(rows);
+      const noteEl = document.getElementById("weeklySalesNote");
+
+      if (!weeklyData.length) {
+        if (weeklyChart) {
+          weeklyChart.destroy();
+          weeklyChart = null;
+        }
+        noteEl.textContent = "KW-Auswertung: Nicht genügend Tagesstände vorhanden.";
+        return;
+      }
+
+      const labels = weeklyData.map(item => item.label);
+      const values = weeklyData.map(item => item.totalSales);
+
+      noteEl.textContent =
+        `Ausgewertet: ${weeklyData.length} Kalenderwochen · letzte KW: ${weeklyData[weeklyData.length - 1].label}`;
+
+      const ctx = document.getElementById("weeklySalesChart").getContext("2d");
+
+      if (weeklyChart) {
+        weeklyChart.data.labels = labels;
+        weeklyChart.data.datasets[0].data = values;
+        weeklyChart.update();
+        return;
+      }
+
+      weeklyChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Verkaufte Tickets je KW",
+              data: values,
+              borderWidth: 1,
+              borderRadius: 8,
+              backgroundColor: "rgba(9, 129, 156, 0.75)",
+              borderColor: "#ebba82"
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: {
+                color: "#fff5ee"
+              }
+            },
+            tooltip: {
+              backgroundColor: "rgba(22,14,11,0.94)",
+              titleColor: "#fff5ee",
+              bodyColor: "#f3d8c7",
+              borderColor: "rgba(235,186,130,0.18)",
+              borderWidth: 1,
+              callbacks: {
+                label(context) {
+                  const value = context.parsed.y ?? 0;
+                  return ` ${value.toLocaleString("de-DE")} Tickets`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: "#d8b8a4"
+              },
+              grid: {
+                color: "rgba(235,186,130,0.08)"
+              }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: "#d8b8a4"
+              },
+              grid: {
+                color: "rgba(235,186,130,0.10)"
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function toggleTable() {
+      const wrapper = document.getElementById("tableWrapper");
+      const icon = document.getElementById("tableToggleIcon");
+
+      tableOpen = !tableOpen;
+
+      if (tableOpen) {
+        wrapper.classList.remove("table-collapsed");
+        wrapper.classList.add("table-open");
+        icon.textContent = "▲";
+      } else {
+        wrapper.classList.remove("table-open");
+        wrapper.classList.add("table-collapsed");
+        icon.textContent = "▼";
+      }
+    }
+
+
+    async function loadDashboard() {
+      const errorBox = document.getElementById("errorBox");
+
+      try {
+        const res = await fetch(CSV_URL + "?t=" + Date.now(), { cache: "no-store" });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status} beim Laden von ${CSV_URL}`);
+        }
+
+        const text = await res.text();
+        const rows = parseCSV(text);
+
+        if (!rows.length) {
+          throw new Error(
+            "Keine Daten gefunden.\n\n" +
+            "Prüfe:\n" +
+            "1. Liegt die CSV im gleichen Webordner wie die index.html?\n" +
+            "2. Ist der Dateiname wirklich ticket_history.csv?\n" +
+            "3. Enthält die CSV eine Kopfzeile + Datenzeilen?\n" +
+            "4. Hat jede Zeile einen Timestamp + 5 Werte?\n" +
+            "5. Ist der Timestamp im Format YYYY-MM-DD HH:mm oder YYYY-MM-DD HH:mm:ss?"
+          );
+        }
+
+        const latestRow = rows[rows.length - 1];
+        const previousDayRow = getPreviousDayLatestRow(rows);
+
+        update7DayAverageSummary(rows);
+        updateDeltaSummary(rows);
+        updatePeakSummary(rows);
+        updateTotalSummaryRing(latestRow);
+        renderCards(latestRow, previousDayRow);
+        createOrUpdateChart(rows);
+        createOrUpdateWeeklySalesChart(rows);
+        renderDataTable(rows);
+
+        document.getElementById("latestTimestamp").textContent =
+          `Letzter Datensatz: ${formatDateTime(latestRow.timestamp)}`;
+
+        const now = new Date();
+        document.getElementById("lastUpdated").textContent =
+          `Aktualisiert: ${now.toLocaleString("de-DE", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit"
+          })}`;
+      } catch (err) {
+        console.error(err);
+        document.getElementById("lastUpdated").textContent = "Fehler beim Laden der CSV";
+        document.getElementById("latestTimestamp").textContent = "Letzter Datensatz: --";
+        document.getElementById("cardsContainer").innerHTML = "";
+
+        document.getElementById("avg7dValue").textContent = "--";
+        document.getElementById("avg7dMeta").textContent = "Keine Daten verfügbar.";
+
+        document.getElementById("deltaTotal").textContent = "--";
+        document.getElementById("deltaMeta").textContent = "Keine Daten verfügbar.";
+
+        document.getElementById("peakValue").textContent = "--";
+        document.getElementById("peakMeta").textContent = "Keine Daten verfügbar.";
+
+        document.getElementById("totalRingPercent").textContent = "--%";
+        document.getElementById("ringValue1").textContent = "--";
+        document.getElementById("ringValue2").textContent = "--";
+        document.getElementById("ringValue3").textContent = "--";
+        document.getElementById("ringValue4").textContent = "--";
+        document.getElementById("ringValue5").textContent = "--";
+        document.getElementById("totalCapacityValue").textContent = "--";
+
+        document.getElementById("totalRing1").style.strokeDasharray = "0 339.292";
+        document.getElementById("totalRing2").style.strokeDasharray = "0 339.292";
+        document.getElementById("totalRing3").style.strokeDasharray = "0 339.292";
+        document.getElementById("totalRing4").style.strokeDasharray = "0 339.292";
+        document.getElementById("totalRing5").style.strokeDasharray = "0 339.292";
+
+        document.getElementById("dataTableHead").innerHTML = "";
+        document.getElementById("dataTableBody").innerHTML = "";
+        document.getElementById("tableRowCount").textContent = "0 Einträge";
+
+        document.getElementById("weeklySalesNote").textContent = "KW-Auswertung: --";
+
+        if (weeklyChart) {
+          weeklyChart.destroy();
+          weeklyChart = null;
+        }
+
+        errorBox.textContent = err.message;
+      }
+    }
+
+    loadDashboard();
+    setInterval(loadDashboard, REFRESH_MS);
+  </script>
+</body>
+</html>
