@@ -1,0 +1,36 @@
+name: Update Ticket Dashboard
+
+on:
+  schedule:
+    - cron: "0 */3 * * *"   # alle 3 Stunden
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-tickets:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository laden
+        uses: actions/checkout@v4
+
+      - name: Python installieren
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Abhängigkeiten installieren
+        run: pip install -r requirements.txt
+
+      - name: Tickets zählen
+        run: python nibelungen_scrapper.py
+
+      - name: CSV zurück ins Repository schreiben
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ticket_history.csv
+          git commit -m "Update ticket history" || echo "Keine Änderungen zum Committen"
+          git push
