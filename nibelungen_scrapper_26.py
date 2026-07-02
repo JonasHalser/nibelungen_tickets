@@ -12,7 +12,7 @@ appointments = [
 ]
 
 #CSV_FILE = "/volume1/homes/jonas/scripts/ticket_history.csv"
-CSV_FILE = "/volume1/web/data/ticket_history.csv"
+CSV_FILE = "ticket_history.csv"
 
 def count_occupied(url):
     try:
